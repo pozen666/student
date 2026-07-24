@@ -2,15 +2,20 @@ package com.grade.service;
 
 import com.grade.dao.CourseDAO;
 import com.grade.entity.Course;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class CourseService {
-    private final CourseDAO courseDAO = new CourseDAO();
+    private final CourseDAO courseDAO;
+
+    public CourseService(CourseDAO courseDAO) {
+        this.courseDAO = courseDAO;
+    }
 
     public boolean addCourse(Course course) {
         if (courseDAO.findByCourseNo(course.getCourseNo()) != null) {
-            System.out.println("课程编号已存在！");
             return false;
         }
         return courseDAO.insert(course) > 0;

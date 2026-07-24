@@ -1,97 +1,65 @@
 package com.grade.dao;
 
 import com.grade.entity.Course;
-import com.grade.util.DBUtil;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.List;
 
+@Repository
 public class CourseDAO {
+    private final JdbcTemplate jdbc;
 
-    public int insert(Course course) {
-        String sql = "INSERT INTO course (course_no, name, teacher, credit) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, course.getCourseNo());
-            ps.setString(2, course.getName());
-            ps.setString(3, course.getTeacher());
-            ps.setDouble(4, course.getCredit());
-            ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+    public CourseDAO(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
     }
 
-    public int update(Course course) {
-        String sql = "UPDATE course SET name=?, teacher=?, credit=? WHERE course_no=?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, course.getName());
-            ps.setString(2, course.getTeacher());
-            ps.setDouble(3, course.getCredit());
-            ps.setString(4, course.getCourseNo());
-            return ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public int delete(String courseNo) {
-        String sql = "DELETE FROM course WHERE course_no=?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, courseNo);
-            return ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public Course findByCourseNo(String courseNo) {
-        String sql = "SELECT * FROM course WHERE course_no=?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, courseNo);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public List<Course> findAll() {
-        List<Course> list = new ArrayList<>();
-        String sql = "SELECT * FROM course ORDER BY course_no";
-        try (Connection conn = DBUtil.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) list.add(mapRow(rs));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    private Course mapRow(ResultSet rs) throws SQLException {
+    private final RowMapper<Course> rowMapper = (ResultSet rs, int row) -> {
         Course c = new Course();
         c.setId(rs.getInt("id"));
         c.setCourseNo(rs.getString("course_no"));
         c.setName(rs.getString("name"));
         c.setTeacher(rs.getString("teacher"));
         c.setCredit(rs.getDouble("credit"));
-        if (rs.getTimestamp("created_at") != null)
-            c.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-        if (rs.getTimestamp("updated_at") != null)
-            c.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         return c;
+    };
+
+    public int insert(Course course) {
+        String sql = "INSERT INTO course (course_no, name, teacher, credit) VALUES (?,?,?,?)";
+        KeyHolder kh = new GeneratedKeyHolder();
+        jdbc.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, course.getCourseNo());
+            ps.setString(2, course.getName());
+            ps.setString(3, course.getTeacher());
+            ps.setDouble(4, course.getCredit());
+            return ps;
+        }, kh);
+        Number key = kh.getKey();
+        return key != null ? key.intValue() : 0;
+    }
+
+    public int update(Course course) {
+        String sql = "UPDATE course SET name=?, teacher=?, credit=? WHERE course_no=?";
+        return jdbc.update(sql, course.getName(), course.getTeacher(), course.getCredit(), course.getCourseNo());
+    }
+
+    public int delete(String courseNo) {
+        return jdbc.update("DELETE FROM course WHERE course_no=?", courseNo);
+    }
+
+    public Course findByCourseNo(String courseNo) {
+        List<Course> list = jdbc.query("SELECT * FROM course WHERE course_no=?", rowMapper, courseNo);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public List<Course> findAll() {
+        return jdbc.query("SELECT * FROM course ORDER BY course_no", rowMapper);
     }
 }

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>成绩管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">学生成绩管理系统</a>
+            <div class="collapse navbar-collapse show" id="nav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/students">学生管理</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/courses">课程管理</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/scores">成绩管理</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>成绩列表</h3>
+            <div>
+                <a href="/scores/add" class="btn btn-primary">录入成绩</a>
+            </div>
+        </div>
+
+        <form class="row g-2 mb-3" method="get" action="/scores">
+            <div class="col-auto">
+                <select class="form-select" name="studentNo">
+                    <option value="">--按学生筛选--</option>
+                    <option th:each="s : ${students}" th:value="${s.studentNo}" th:text="${s.studentNo + ' - ' + s.name}"
+                            th:selected="${filterStudent == s.studentNo}"></option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <select class="form-select" name="courseNo">
+                    <option value="">--按课程筛选--</option>
+                    <option th:each="c : ${courses}" th:value="${c.courseNo}" th:text="${c.courseNo + ' - ' + c.name}"
+                            th:selected="${filterCourse == c.courseNo}"></option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">筛选</button>
+                <a href="/scores" class="btn btn-outline-secondary">清除</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>学号</th>
+                        <th>姓名</th>
+                        <th>课程名称</th>
+                        <th>成绩</th>
+                        <th>考试日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="sc : ${scores}">
+                        <td th:text="${sc.studentNo}"></td>
+                        <td th:text="${sc.studentName}"></td>
+                        <td th:text="${sc.courseName}"></td>
+                        <td th:text="${sc.score}"></td>
+                        <td th:text="${sc.examDate}"></td>
+                        <td>
+                            <a th:href="@{/scores/edit(studentNo=${sc.studentNo}, courseNo=${sc.courseNo})}" class="btn btn-sm btn-warning">修改</a>
+                            <a th:href="@{/scores/delete(studentNo=${sc.studentNo}, courseNo=${sc.courseNo})}" class="btn btn-sm btn-danger" onclick="return confirm('确认删除？')">删除</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <a href="/" class="btn btn-outline-secondary">返回首页</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -2,11 +2,17 @@ package com.grade.service;
 
 import com.grade.dao.ScoreDAO;
 import com.grade.entity.Score;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class ScoreService {
-    private final ScoreDAO scoreDAO = new ScoreDAO();
+    private final ScoreDAO scoreDAO;
+
+    public ScoreService(ScoreDAO scoreDAO) {
+        this.scoreDAO = scoreDAO;
+    }
 
     public boolean addScore(Score score) {
         return scoreDAO.insert(score) > 0;

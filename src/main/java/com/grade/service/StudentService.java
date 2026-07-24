@@ -2,15 +2,20 @@ package com.grade.service;
 
 import com.grade.dao.StudentDAO;
 import com.grade.entity.Student;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class StudentService {
-    private final StudentDAO studentDAO = new StudentDAO();
+    private final StudentDAO studentDAO;
+
+    public StudentService(StudentDAO studentDAO) {
+        this.studentDAO = studentDAO;
+    }
 
     public boolean addStudent(Student student) {
         if (studentDAO.findByStudentNo(student.getStudentNo()) != null) {
-            System.out.println("学号已存在！");
             return false;
         }
         return studentDAO.insert(student) > 0;
